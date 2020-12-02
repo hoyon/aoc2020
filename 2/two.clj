@@ -1,21 +1,17 @@
 (ns two
   (:require [clojure.string :as str]))
 
-(defn read-file []
-  (->> (slurp "input")
-       (str/split-lines)
-       (map process-line)))
-
-(defn letter->char [letter]
-  (let [bytes-array (.getBytes letter)]
-    (char (first bytes-array))))
-
 (defn process-line [line]
   (let [[min max letter _ password] (str/split line #"[- :]")]
     {:min (Integer. min)
      :max (Integer. max)
-     :letter (letter->char letter)
+     :letter (.charAt letter 0)
      :password password}))
+
+(defn read-file []
+  (->> (slurp "input")
+       (str/split-lines)
+       (map process-line)))
 
 (defn valid-1? [{:keys [min max letter password]}]
   (let [matches (filter #(= letter %) password)
