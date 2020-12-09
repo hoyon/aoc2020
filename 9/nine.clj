@@ -34,8 +34,9 @@
 (defn part2-indices [input target]
   (->> (range (count input))
        (map #(vector % (get-sum input target %)))
-       (filter #(some? (nth % 1)))
-       (filter #(< 1 (- (nth % 1) (nth % 0))))
+       (filter #(and (some? (nth % 1))
+                     (< 1 (- (nth % 1)
+                             (nth % 0)))))
        (first)))
 
 (defn part2 [input target]
@@ -47,6 +48,6 @@
   (let [input (vec (read-file))
         answer1 (part1 input)]
     (println answer1)
-    (println (part2 input answer1))))
+    (println (str (part2 input answer1)))))
 
 (-main)
