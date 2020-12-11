@@ -22,14 +22,18 @@
         c (filter #(= % (+ 3 num)) numbers)]
     {:n num :next (concat a b c)}))
 
+(defn get-suffix-combos [nexts]
+  (reduce
+   (fn [acc {:keys [n next]}]
+     (let [finishers (map #(get acc %) next)]
+       (assoc acc n (apply + finishers))))
+   (assoc {} (:n (last nexts)) 1)
+   (rest (reverse nexts))))
+
 (defn part2 [numbers]
   (let [nexts (map (partial possible-next numbers) numbers)
-        ways-to-finish (atom (assoc {} (:n (last nexts)) 1))]
-    (run! (fn [{:keys [n next]}]
-            (let [finishers (map #(get @ways-to-finish %) next)]
-              (swap! ways-to-finish assoc n (apply + finishers))))
-          (rest (reverse nexts)))
-    (get @ways-to-finish 0)))
+        suffix-combos (get-suffix-combos nexts)]
+    (get suffix-combos 0)))
 
 (defn -main []
   (let [numbers (read-file)]
