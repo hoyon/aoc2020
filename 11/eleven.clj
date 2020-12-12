@@ -42,16 +42,21 @@
 (defn put-cell [state x y status]
   (assoc-in state [:grid y x] status))
 
+(def coords
+  (memoize (fn [size-x size-y] (for [x (range size-x) y (range size-y)] [x y]))))
+
 (defn step-1 [initial-state]
-  (let [state (atom initial-state)]
-    (doall (for [x (range 0 (:size-x initial-state))
-                 y (range 0 (:size-y initial-state))]
-             (let [cell (get-cell initial-state x y)
-                   adj (adjacent-seats initial-state x y)]
-               (cond
-                 (and (= cell :empty) (= 0 (:occupied adj))) (swap! state put-cell x y :occupied)
-                 (and (= cell :occupied) (>= (:occupied adj) 4)) (swap! state put-cell x y :empty)))))
-    @state))
+  (reduce
+   (fn [state [x y]]
+     (let [cell (get-cell initial-state x y)
+           adj (adjacent-seats initial-state x y)]
+       (cond
+         (and (= cell :empty) (= 0 (:occupied adj))) (put-cell state x y :occupied)
+         (and (= cell :occupied) (>= (:occupied adj) 4)) (put-cell state x y :empty)
+         :else state))
+     )
+   initial-state
+   (coords (:size-x initial-state) (:size-y initial-state))))
 
 (defn simulate [initial-state]
   (loop [state initial-state]
