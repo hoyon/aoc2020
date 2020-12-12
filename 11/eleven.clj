@@ -45,28 +45,58 @@
 (def coords
   (memoize (fn [size-x size-y] (for [x (range size-x) y (range size-y)] [x y]))))
 
-(defn step-1 [initial-state]
+(defn step [initial-state config]
   (reduce
    (fn [state [x y]]
      (let [cell (get-cell initial-state x y)
-           adj (adjacent-seats initial-state x y)]
+           c (delay ((:caster config) initial-state x y))]
        (cond
-         (and (= cell :empty) (= 0 (:occupied adj))) (put-cell state x y :occupied)
-         (and (= cell :occupied) (>= (:occupied adj) 4)) (put-cell state x y :empty)
+         (and (= cell :empty) (= 0 (:occupied @c))) (put-cell state x y :occupied)
+         (and (= cell :occupied) (>= (:occupied @c) (:threshold config))) (put-cell state x y :empty)
          :else state))
      )
    initial-state
    (coords (:size-x initial-state) (:size-y initial-state))))
 
-(defn simulate [initial-state]
+(defn simulate [initial-state step-config]
   (loop [state initial-state]
-    (let [updated (step-1 state)]
+    (let [updated (step state step-config)]
       (if (= state updated)
         updated
         (recur updated)))))
 
 (defn part1 [state]
-  (let [simulated (simulate state)]
+  (let [simulated (simulate state {:caster adjacent-seats :threshold 4})]
+    (->> (:grid simulated)
+         (flatten)
+         (filter #(= :occupied %))
+         (count))))
+
+(defn cast-ray [state x y offset-x offset-y]
+  (loop [x x y y]
+    (let [new-x (+ x offset-x)
+          new-y (+ y offset-y)
+          cell (get-cell state new-x new-y)]
+      (case cell
+        nil nil
+        :floor (recur new-x new-y)
+        cell))))
+
+(defn cast-rays [state x y]
+  (let [n  (cast-ray state x y  0 -1)
+        ne (cast-ray state x y  1 -1)
+        e  (cast-ray state x y  1  0)
+        se (cast-ray state x y  1  1)
+        s  (cast-ray state x y  0  1)
+        sw (cast-ray state x y -1  1)
+        w  (cast-ray state x y -1  0)
+        nw (cast-ray state x y -1 -1)
+        combined [n ne e se s sw w nw]]
+    {:empty (count (filter #(= :empty %) combined))
+     :occupied (count (filter #(= :occupied %) combined))}))
+
+(defn part2 [state]
+  (let [simulated (simulate state {:caster cast-rays :threshold 5})]
     (->> (:grid simulated)
          (flatten)
          (filter #(= :occupied %))
@@ -74,6 +104,7 @@
 
 (defn -main []
   (let [state (create-state)]
-    (println (part1 state))))
+    (println (part1 state))
+    (println (part2 state))))
 
 (-main)
