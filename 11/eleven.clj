@@ -19,7 +19,8 @@
   (let [grid (read-file)]
     {:grid grid
      :size-x (count (first grid))
-     :size-y (count grid)}))
+     :size-y (count grid)
+     :changed false}))
 
 (defn get-cell [state x y]
   (if (or (>= x (:size-x state)) (>= y (:size-y state)) (< x 0) (< y 0))
@@ -40,7 +41,9 @@
      :occupied (count (filter #(= :occupied %) combined))}))
 
 (defn put-cell [state x y status]
-  (assoc-in state [:grid y x] status))
+  (-> state
+      (assoc-in [:grid y x] status)
+      (assoc :changed true)))
 
 (def coords
   (memoize (fn [size-x size-y] (for [x (range size-x) y (range size-y)] [x y]))))
@@ -55,13 +58,13 @@
          (and (= cell :occupied) (>= (:occupied @c) (:threshold config))) (put-cell state x y :empty)
          :else state))
      )
-   initial-state
+   (assoc initial-state :changed false)
    (coords (:size-x initial-state) (:size-y initial-state))))
 
 (defn simulate [initial-state step-config]
   (loop [state initial-state]
     (let [updated (step state step-config)]
-      (if (= state updated)
+      (if-not (:changed updated)
         updated
         (recur updated)))))
 
