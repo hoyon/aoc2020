@@ -37,8 +37,7 @@
         w  (get-cell state (dec x) y)
         nw (get-cell state (dec x) (dec y))
         combined [n ne e se s sw w nw]]
-    {:empty (count (filter #(= :empty %) combined))
-     :occupied (count (filter #(= :occupied %) combined))}))
+    (count (filter #(= :occupied %) combined))))
 
 (defn put-cell [state x y status]
   (-> state
@@ -54,8 +53,8 @@
      (let [cell (get-cell initial-state x y)
            c (delay ((:caster config) initial-state x y))]
        (cond
-         (and (= cell :empty) (= 0 (:occupied @c))) (put-cell state x y :occupied)
-         (and (= cell :occupied) (>= (:occupied @c) (:threshold config))) (put-cell state x y :empty)
+         (and (= cell :empty) (= 0 @c)) (put-cell state x y :occupied)
+         (and (= cell :occupied) (>= @c (:threshold config))) (put-cell state x y :empty)
          :else state))
      )
    (assoc initial-state :changed false)
@@ -95,8 +94,7 @@
         w  (cast-ray state x y -1  0)
         nw (cast-ray state x y -1 -1)
         combined [n ne e se s sw w nw]]
-    {:empty (count (filter #(= :empty %) combined))
-     :occupied (count (filter #(= :occupied %) combined))}))
+    (count (filter #(= :occupied %) combined))))
 
 (defn part2 [state]
   (let [simulated (simulate state {:caster cast-rays :threshold 5})]
